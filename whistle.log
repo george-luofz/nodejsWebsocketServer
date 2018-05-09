@@ -1,0 +1,15 @@
+
+From: whistle@1.9.10
+Node: v8.4.0
+Date: 2018/5/6 下午5:42:24
+Error: listen EADDRINUSE :::8899
+    at Object._errnoException (util.js:1041:11)
+    at _exceptionWithHostPort (util.js:1064:20)
+    at Server.setupListenHandle [as _listen2] (net.js:1322:14)
+    at listenInCluster (net.js:1370:12)
+    at Server.listen (net.js:1466:7)
+    at proxy (/usr/local/lib/node_modules/whistle/lib/index.js:77:12)
+    at module.exports (/usr/local/lib/node_modules/whistle/index.js:79:26)
+    at Command.<anonymous> (/usr/local/lib/node_modules/whistle/node_modules/starting/lib/bootstrap.js:10:5)
+    at Command.listener (/usr/local/lib/node_modules/whistle/node_modules/commander/index.js:289:8)
+    at emitTwo (events.js:125:13)
