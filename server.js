@@ -25,13 +25,15 @@ if(errorMsg){
 
 
 const EVENT_AUTH = 'auth';
-const EVENT_GAME_START = 'game_start';
+const EVENT_GAME_START = 'game_round'; //game_start
 const EVENT_COMMIT_ANSWER = 'game_commit_answer';
 const EVENT_ANSWER_FINISH = 'game_answer_finish';
 const EVENT_USE_PROP = 'game_use_prop';
 const EVENT_TIME_OVER = 'game_time_over';
 const EVENT_GAME_OVER = 'game_over';
 const EVENT_HEART_BEAT = 'heart_beat';
+const EVENT_PROP_PUSH = 'game_prop_push'; 
+const EVENT_ANSWER_PUSH = 'game_answer_push';
 
 let sendEvents = [EVENT_AUTH, EVENT_COMMIT_ANSWER, EVENT_USE_PROP, EVENT_TIME_OVER, EVENT_HEART_BEAT]; //客户端发送事件
 let observeEvents = [EVENT_GAME_START, EVENT_ANSWER_FINISH, EVENT_GAME_OVER]; // 服务端推送事件
@@ -161,7 +163,7 @@ const initAuthDataJSON = {
         "props":[
             {
                 "key":"datifuhuo",
-                "logo":"http://hb-redpack.semmw.com/game/images/20184/152282069240972.png",
+                "logo":meIconUrl,
                 "count":0,
                 "price":100,
                 "gameCount":1
@@ -176,7 +178,7 @@ const initAuthDataJSON = {
             {
                 "key":"datishengming",
                 "logo":"http://hb-redpack.semmw.com/game/images/20184/1522820711290249.png",
-                "count":1,
+                "count":2,
                 "price":100,
                 "gameCount":1
             },
@@ -189,25 +191,38 @@ const initAuthDataJSON = {
             }
         ]
     }
-// const initAuthData = initAuthDataJSON
+const initAuthData = initAuthDataJSON
 
-var initAuthData = {
-    questions:[
-        {questionId:1,title:"这首歌的作者生于哪个年代?",options:["50后","60后","70后"]},
-        {questionId:2,title:"这首歌的作者生于哪个国家?",options:["中国","美国","日本"]},
-        {questionId:3,title:"这首歌的作者生于哪个城市?",options:["北京","上海","天津"]},
-        {questionId:4,title:"这首歌的作者哪个口音?",options:["北京话","上海话","河南话"]},
-        {questionId:5,title:"这首歌的作者什么性别?",options:["男","女","未知"]}
+// var initAuthData = {
+//     questions:[
+//         {questionId:1,title:"这首歌的作者生于哪个年代?",options:["50后","60后","70后"]},
+//         {questionId:2,title:"这首歌的作者生于哪个国家?",options:["中国","美国","日本"]},
+//         {questionId:3,title:"这首歌的作者生于哪个城市?",options:["北京","上海","天津"]},
+//         {questionId:4,title:"这首歌的作者哪个口音?",options:["北京话","上海话","河南话"]},
+//         {questionId:5,title:"这首歌的作者什么性别?",options:["男","女","未知"]}
+//     ],
+//     answers:[1,2,2,1,3], // 1,2分别表示正确答案顺序，取值(1,2,3)
+//     userInfo:[{iconUrl:meIconUrl,userId:123,openId:"1"},{iconUrl:sheIconUrl,userId:234,openId:"2"}], //考虑到可能有多个信息，用了字典
+//     props:[{key:"",logo:"http://",count:10,gameCount:1}], //道具信息，里边是多个字典；keyid表示道具id，iconUrl表示道具图片，lastNum表示剩余数量
+//     lastTime:15, //每题时长,
+//     propTime:3  //道具时长
+// }
+
+var gameStartInfoData = { //开始答题与答题结束给的数据类似
+    "userInfo":[
+        {
+            "openId":"dd68f0f702a0f637c7151a92a13458b4",
+            "currentScore": 10,
+            "totalScore" : 20,
+            "continuousNum" :1
+        },
+        {
+            "openId":"a4ec4aa64671960ec8c1b1a302aa78cc",
+            "currentScore": 20,
+            "totalScore" : 50,
+            "continuousNum" :0
+        }
     ],
-    answers:[1,2,2,1,3], // 1,2分别表示正确答案顺序，取值(1,2,3)
-    userInfo:[{iconUrl:meIconUrl,userId:123,openId:"1"},{iconUrl:sheIconUrl,userId:234,openId:"2"}], //考虑到可能有多个信息，用了字典
-    props:[{key:"",logo:"http://",count:10,gameCount:1}], //道具信息，里边是多个字典；keyid表示道具id，iconUrl表示道具图片，lastNum表示剩余数量
-    lastTime:15, //每题时长,
-    propTime:3  //道具时长
-}
-
-var gameStartInfoData = {
-    userInfo:[{openId:"",score:23},{openId:"",score:23}],
     questionId:1, //题目索引
     props:[{id:1,iconUrl:"http://",lastNum:10,start:1}], //本题开始时的道具信息  //待定
     qnum:1 //第几题
@@ -221,7 +236,20 @@ var commitAnswerInfoData = {
 }
 
 var answerFinishInfoData = {
-
+    "userInfo":[
+        {
+            "openId":"dd68f0f702a0f637c7151a92a13458b4",
+            "currentScore": 10,
+            "totalScore" : 20,
+            "continuousNum" :1
+        },
+        {
+            "openId":"a4ec4aa64671960ec8c1b1a302aa78cc",
+            "currentScore": 20,
+            "totalScore" : 50,
+            "continuousNum" :5
+        }
+    ]
 }
 
 var usePropInfoData = {
@@ -241,6 +269,15 @@ var gameOverInfoData = {
 
 }
 
+var propPushData = {
+    'roomId'       :'2',
+    'gameId'       :'1',
+    'propId'       :'datishengming',
+    'openId'       : 1,
+    'currentScore' : 5,
+    'totalScore': 20,
+    'continuousNum' :2
+}
 // 2.搭建服务器
 const wss = new WebSocket.Server({ port: 8085 });
 
@@ -315,37 +352,80 @@ wss.on('connection', function connection(ws) {
     var eventId = jsonObj.eventId;
     console.log('eventId '+ eventId);
 
-    
     if(eventId === EVENT_COMMIT_ANSWER){
-        var tempData = buildResponseDataWithEvent(EVENT_ANSWER_FINISH);
+        var userInfoData =  answerFinishInfoData;
+        for(var i = 0 ;i < userInfoData.length;i++){
+            var tempData = userInfoData[i];
+            tempData.currentScore += Math.ceil(Math.random()*10);; //随机一个数
+            tempData.totalScore += tempData.currentScore;
+            tempData.continuousNum = i % 2 == 0 ? 1:0; //伪造连对多少题
+        }
+        var tempData = buildResponseDataWithEventAndData(EVENT_ANSWER_PUSH,userInfoData);
         var tempJsonStr = JSON.stringify(tempData);
         console.log('send client with answerFinish');
         webSocket.send(tempJsonStr);
     }else if(eventId === EVENT_TIME_OVER){
-        var questionIds = jsonObj['data']['questionId'];
+        var respQuestionIds = jsonObj['data']['questionId'];
+        // 根据questionId找question index
+        var questionIds = 0;
+        for(var i = 0;i < initAuthDataJSON['questions'].length;i++){
+            var tempObj = initAuthDataJSON['questions'][i];
+            if(tempObj['questionId'] === respQuestionIds){
+                questionIds = i; //找到索引
+                break;
+            }
+        }
+        questionIds+=1; //从1开始
+        console.log('第' +questionIds +'题上报倒计时结束');
         var newData = null;
-        console.log('questionId ' +questionIds);
-        if(questionIds === initAuthData['questions'].length){
+        
+        if(questionIds === initAuthData['questions'].length){ //是最后一题
             newData = buildResponseDataWithEvent(EVENT_GAME_OVER);
             console.log('send client with gameOver');
         }else{
+            
             questionIds++;
-            var tempData = {
-                userInfo:[{openId:"",score:44},{openId:"",score:48}],
-                qnum:questionIds, //第几题
-                props:[{id:1,iconUrl:"http://",lastNum:10,start:1}] //本题开始时的道具信息  //待定
+            var tempData = { //开始答题与答题结束给的数据类似
+                "userInfo":[
+                    {
+                        "openId":"dd68f0f702a0f637c7151a92a13458b4",
+                        "currentScore": Math.ceil(Math.random()*10),
+                        "totalScore" : 20+Math.ceil(Math.random()*10),
+                        "continuousNum" :5
+                    },
+                    {
+                        "openId":"a4ec4aa64671960ec8c1b1a302aa78cc",
+                        "currentScore": Math.ceil(Math.random()*10),
+                        "totalScore" : 50+Math.ceil(Math.random()*10),
+                        "continuousNum" :5
+                    }
+                ],
+                questionId:initAuthDataJSON['questions'][questionIds-1]['questionId'], //题目id
+                props:[{id:1,iconUrl:"http://",lastNum:10,start:1}], //本题开始时的道具信息  //待定
+                qnum:questionIds //第几题
             }
+            // var tempData = {
+            //     userInfo:[{openId:"",score:44},{openId:"",score:48}],
+            //     qnum:questionIds, //第几题
+            //     props:[{id:1,iconUrl:"http://",lastNum:10,start:1}] //本题开始时的道具信息  //待定
+            // }
             var newData = {
                 eventId : EVENT_GAME_START,
                 error : null,
                 message : tempData,
                 success : 1
             }
-            console.log('send client with game start');
+            console.log('即将下发第'+questionIds+'题数据');
         }
         var tempJsonStr = JSON.stringify(newData);
         console.log('send client with '+ tempJsonStr);
         webSocket.send(tempJsonStr);
+        if(questionIds == 2){ //第二题发一个对方使用道具事件
+            var respData = buildResponseDataWithEvent(EVENT_PROP_PUSH);
+            var sendStr = JSON.stringify(respData);
+            console.log('send client with a prop'+ sendStr);
+            webSocket.send(sendStr);
+        }
     }else{
         var respData = buildResponseDataWithEvent(jsonObj.eventId);
         var sendStr = JSON.stringify(respData);
@@ -375,8 +455,7 @@ wss.on('connection', function connection(ws) {
     // }, 5000);
  }
 
- function buildResponseDataWithEvent(event){
-    var data = _infoDataWithEvent(event);
+ function buildResponseDataWithEventAndData(event,data){
     var respData = {
         eventId : event,
         error : null,
@@ -386,16 +465,22 @@ wss.on('connection', function connection(ws) {
     return respData;
  }
 
+ function buildResponseDataWithEvent(event){
+    var data = _infoDataWithEvent(event);
+    return buildResponseDataWithEventAndData(event,data);
+ }
+
  function _infoDataWithEvent(event){
      let data = null;
      switch (event){
          case EVENT_AUTH: data = initAuthData;break;
          case EVENT_GAME_START: data = gameStartInfoData;break;
          case EVENT_COMMIT_ANSWER: data = commitAnswerInfoData;break;
-         case EVENT_ANSWER_FINISH: data = answerFinishInfoData;break;
+         case EVENT_ANSWER_PUSH: data = answerFinishInfoData;break; 
          case EVENT_USE_PROP: data = usePropInfoData;break;
          case EVENT_TIME_OVER : data = timeOutInfoData;break;
          case EVENT_GAME_OVER : data = gameOverInfoData;break;
+         case EVENT_PROP_PUSH : data = propPushData; break;
      }
      console.log('evnetId '+event + ' should response with '+ JSON.stringify(data));
      return data;
